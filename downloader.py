@@ -11,8 +11,8 @@ import csv
 import os
 
 # Set up Edge WebDriver
-service = Service()
-driver = webdriver.Edge(executable_path="[path_to_selenium_driver].exe")
+service = Service(executable_path="[path_to_selenium_driver].exe")
+driver = webdriver.Edge(service=service)
 
 # Base URL for DNA Relatives with pagination
 base_url = "https://you.23andme.com/family/relatives/?sort=strength&page="
