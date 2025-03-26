@@ -11,8 +11,8 @@ import csv
 import os
 
 # Set up Edge WebDriver
-service = Service(executable_path="[path_to_selenium_driver].exe")
-driver = webdriver.Edge(service=service)
+service = Service()
+driver = webdriver.Edge(executable_path="[path_to_selenium_driver].exe")
 
 # Base URL for DNA Relatives with pagination
 base_url = "https://you.23andme.com/family/relatives/?sort=strength&page="
@@ -79,6 +79,10 @@ try:
             small_details = item.find_elements(By.CLASS_NAME, "small-detail")
             match_data["small_details"] = [detail.text.strip() for detail in small_details if detail.text.strip() and detail.tag_name == "span"]
 
+            # Clean segment fields
+            segment_details = item.find_elements(By.CSS_SELECTOR, "span.shared-dna.hide-for-mobile")
+            match_data["segment_details"] = [detail.text.strip() for detail in segment_details if detail.text.strip() and detail.tag_name == "span"]
+
             page_matches.append(match_data)
 
         # Save page data to JSON
@@ -119,13 +123,15 @@ if captured_pages == total_pages:
         line = f"{match['name']} - {relationship}"
         if match['small_details']:
             line += " (" + ", ".join(match['small_details']) + ")"
+        if match['segment_details']:
+            line += " (" + ", ".join(match['segment_details']) + ")"
         pdf.multi_cell(0, 10, line.encode('latin-1', 'replace').decode('latin-1'))
     pdf.output("23andme_matches.pdf")
     print(f"Compiled {len(all_matches)} matches into 23andme_matches.pdf")
 
     # Save to CSV
     with open("23andme_matches.csv", "w", newline="", encoding="utf-8") as csv_file:
-        writer = csv.DictWriter(csv_file, fieldnames=["name", "relationship_1", "relationship_2", "small_detail_1", "small_detail_2", "small_detail_3"])
+        writer = csv.DictWriter(csv_file, fieldnames=["name", "relationship_1", "relationship_2", "small_detail_1", "small_detail_2", "small_detail_3","segment_details"])
         writer.writeheader()
         for match in all_matches:
             row = {
@@ -134,7 +140,8 @@ if captured_pages == total_pages:
                 "relationship_2": match["relationships"][1] if len(match["relationships"]) > 1 else "",
                 "small_detail_1": match["small_details"][0] if len(match["small_details"]) > 0 else "",
                 "small_detail_2": match["small_details"][1] if len(match["small_details"]) > 1 else "",
-                "small_detail_3": match["small_details"][2] if len(match["small_details"]) > 2 else ""
+                "small_detail_3": match["small_details"][2] if len(match["small_details"]) > 2 else "",
+                "segment_details": match["segment_details"][0] if len(match["segment_details"]) > 0 else ""
             }
             writer.writerow(row)
     print(f"Compiled {len(all_matches)} matches into 23andme_matches.csv")
